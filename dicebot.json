@@ -1,0 +1,36 @@
+{
+  "diceBotConfig":{},
+  "server": {
+    "applicationConnectors": [
+      {
+        "type": "http",
+        "port" : 10080
+      },
+      {
+        "type": "https",
+        "port" : 10443,
+        "keyStorePath": "/var/lib/dicebot/keystore.jks",
+        "keyStorePassword": "changeit",
+        "trustStorePath": "/usr/lib/jvm/jre/lib/security/cacerts",
+        "certAlias": "selfsigned"
+      }
+    ],
+    "adminConnectors": [
+      {
+        "type": "http",
+        "port": 10081
+      }
+    ]
+  },
+  "logging": {
+    "appenders": [
+      {
+        "type": "file",
+        "currentLogFilename": "/var/log/dicebot/dicebot.log",
+        "archivedLogFilenamePattern": "/var/log/dicebot/dicebot-%d.log",
+        "archivedFileCount": 5
+      }
+    ],
+    "level": "INFO"
+  }
+}
