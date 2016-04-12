@@ -22,6 +22,7 @@ import com.derpgroup.dicebot.util.DiceUtil;
 
 public class DiceBotManager{
   private final Logger LOG = LoggerFactory.getLogger(DiceBotManager.class);
+  private final float defaultCoefficientModifierScalar = (float) .3;
 
   static {
     ConversationHistoryUtils.getMapper().registerModule(new MixInModule());
@@ -39,6 +40,8 @@ public class DiceBotManager{
     case "START_OF_CONVERSATION":
       doHelloRequest(serviceInput, serviceOutput);
       break;
+    case "END_OF_CONVERSATION":
+      return;
     case "ROLL_DIE":
       doRollDieRequest(serviceInput, serviceOutput);
       break;
@@ -67,11 +70,14 @@ public class DiceBotManager{
     }
   }
 
+  //TODO: Refactor these three methods into one, keeping in mind their expansion in the future
   private void doRollDieRequest(ServiceInput serviceInput, ServiceOutput serviceOutput) {
     Map<String, String> messageMap = serviceInput.getMessageAsMap();
     Map<Integer, Integer> rollParameters = getRollParameters(messageMap);
     
-    Map<Integer, List<Integer>> rollsByNumSides = DiceUtil.rollDice(rollParameters, null);
+    DiceSkewStrategy strategy = new CoefficientDiceSkewStrategy(0 * defaultCoefficientModifierScalar);
+    
+    Map<Integer, List<Integer>> rollsByNumSides = DiceUtil.rollDice(rollParameters, strategy);
     
     buildResponseFromRolls(rollsByNumSides, serviceOutput);
   }
@@ -80,7 +86,7 @@ public class DiceBotManager{
     Map<String, String> messageMap = serviceInput.getMessageAsMap();
     Map<Integer, Integer> rollParameters = getRollParameters(messageMap);
     
-    DiceSkewStrategy strategy = new CoefficientDiceSkewStrategy(-1);
+    DiceSkewStrategy strategy = new CoefficientDiceSkewStrategy(-1 * defaultCoefficientModifierScalar );
     
     Map<Integer, List<Integer>> rollsByNumSides = DiceUtil.rollDice(rollParameters, strategy);
     
@@ -91,7 +97,7 @@ public class DiceBotManager{
     Map<String, String> messageMap = serviceInput.getMessageAsMap();
     Map<Integer, Integer> rollParameters = getRollParameters(messageMap);
     
-    DiceSkewStrategy strategy = new CoefficientDiceSkewStrategy(1);
+    DiceSkewStrategy strategy = new CoefficientDiceSkewStrategy(1 * defaultCoefficientModifierScalar);
     
     Map<Integer, List<Integer>> rollsByNumSides = DiceUtil.rollDice(rollParameters, strategy);
     
@@ -121,17 +127,25 @@ public class DiceBotManager{
   }
 
   private void doRepeatRequest(ServiceInput serviceInput, ServiceOutput serviceOutput) {
-    
+    DiceBotMetadata inputMetadata = (DiceBotMetadata)serviceInput.getMetadata();
+    if(inputMetadata != null && inputMetadata.getPreviousRolls() != null){
+      Map<Integer, List<Integer>> previousRolls = inputMetadata.getPreviousRolls();
+
+      buildResponseFromRolls(previousRolls, serviceOutput);
+    }else{
+      LOG.error("User ended up on repeat intent with no conversation history. Redirecting to launch.");
+      doHelloRequest(serviceInput, serviceOutput);
+    }
   }
 
   protected void doHelloRequest(ServiceInput serviceInput,
-      ServiceOutput serviceOutput) throws DerpwizardException {
+      ServiceOutput serviceOutput){
     serviceOutput.setConversationEnded(false);
 
     StringBuilder outputMessageBuilder = new StringBuilder();
     outputMessageBuilder.append("Here to test the fates? Lets roll some dice!");
     StringBuilder delayedOutputMessageBuilder = new StringBuilder();
-    delayedOutputMessageBuilder.append("You can start by saying<break /> roll a die</break> or say help if you want to hear more options.");
+    delayedOutputMessageBuilder.append("You can start by saying<break /> roll a die<break /> or say help if you want to hear more options.");
     String outputMessage = outputMessageBuilder.toString();
     serviceOutput.getVisualOutput().setTitle("Hello...");
     serviceOutput.getVisualOutput().setText(outputMessage);
@@ -180,22 +194,35 @@ public class DiceBotManager{
       throw new IllegalArgumentException();
     }
 
-    StringBuilder sb = new StringBuilder();
+    StringBuilder textOutput = new StringBuilder();
+    StringBuilder voiceOutput = new StringBuilder();
     for(Entry<Integer, List<Integer>> entry : rollsByNumSides.entrySet()){
       int numSides = entry.getKey();
       List<Integer> rolls = entry.getValue();
-      sb.append("I rolled " + rolls.size() + " " + numSides + " sided dice, with values: ");
+      String diceWord;
+      String valuesWord;
+      if(rolls.size() == 1){
+        diceWord = "die";
+        valuesWord = "value";
+      }else{
+        diceWord = "dice";
+        valuesWord = "values";
+      }
+      textOutput.append("I rolled " + rolls.size() + " " + numSides + " sided " + diceWord + ", with " + valuesWord + ": ");
+      voiceOutput.append("I rolled " + rolls.size() + " " + numSides + " sided  " + diceWord + "<break /> with " + valuesWord + "<break /> ");
       for(Integer roll : rolls){
-        sb.append(roll + ",");
+        textOutput.append(roll + ",");
+        voiceOutput.append(roll + "<break />");
       }
     }
     
-    String message = sb.toString();
+    String visualMessage = textOutput.toString();
+    String voiceMessage = voiceOutput.toString();
     serviceOutput.getVisualOutput().setTitle("Results: ");
-    serviceOutput.getVisualOutput().setText(message);
-    serviceOutput.getVoiceOutput().setSsmltext(message);
+    serviceOutput.getVisualOutput().setText(visualMessage);
+    serviceOutput.getVoiceOutput().setSsmltext(voiceMessage);
     
     DiceBotMetadata metadata = (DiceBotMetadata)serviceOutput.getMetadata();
-    metadata.setRolls(rollsByNumSides);
+    metadata.setPreviousRolls(rollsByNumSides);
   }
 }

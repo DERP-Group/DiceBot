@@ -11,13 +11,13 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 @JsonTypeInfo(use = Id.NAME, include = JsonTypeInfo.As.PROPERTY, property="type", defaultImpl = DiceBotMetadata.class)
 public class DiceBotMetadata extends CommonMetadata {
   
-  private Map<Integer,List<Integer>> rolls;
+  private Map<Integer,List<Integer>> previousRolls;
 
-  public Map<Integer, List<Integer>> getRolls() {
-    return rolls;
+  public Map<Integer, List<Integer>> getPreviousRolls() {
+    return previousRolls;
   }
 
-  public void setRolls(Map<Integer, List<Integer>> rolls) {
-    this.rolls = rolls;
+  public void setPreviousRolls(Map<Integer, List<Integer>> previousRolls) {
+    this.previousRolls = previousRolls;
   }
 }
