@@ -146,7 +146,12 @@ public class DiceBotAlexaResource {
       case "END_OF_CONVERSATION":
       case "STOP":
       case "CANCEL":
-        outputSpeech = null;
+        if(serviceOutput.getVoiceOutput() == null || serviceOutput.getVoiceOutput().getSsmltext() == null){
+          outputSpeech = null;
+        }else{
+          outputSpeech = new SsmlOutputSpeech();
+          outputSpeech.setSsml("<speak>"+serviceOutput.getVoiceOutput().getSsmltext()+"</speak>");
+        }
         card = null;
         shouldEndSession = true;
         break;
