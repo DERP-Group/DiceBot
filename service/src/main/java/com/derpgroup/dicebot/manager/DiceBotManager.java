@@ -16,20 +16,23 @@ import com.derpgroup.derpwizard.voice.model.ServiceInput;
 import com.derpgroup.derpwizard.voice.util.ConversationHistoryUtils;
 import com.derpgroup.dicebot.DiceBotMetadata;
 import com.derpgroup.dicebot.MixInModule;
+import com.derpgroup.dicebot.configuration.DiceBotConfig;
 import com.derpgroup.dicebot.skew.CoefficientDiceSkewStrategy;
 import com.derpgroup.dicebot.skew.DiceSkewStrategy;
 import com.derpgroup.dicebot.util.DiceUtil;
 
 public class DiceBotManager{
   private final Logger LOG = LoggerFactory.getLogger(DiceBotManager.class);
+  
   private final float defaultCoefficientModifierScalar = (float) .3;
 
   static {
     ConversationHistoryUtils.getMapper().registerModule(new MixInModule());
   }
 
-  public DiceBotManager() {
+  public DiceBotManager(DiceBotConfig diceBotConfig) {
     super();
+    System.out.println(diceBotConfig.getDiceBotSoundsRootPath());
   }
 
   public void handleRequest(ServiceInput serviceInput,
