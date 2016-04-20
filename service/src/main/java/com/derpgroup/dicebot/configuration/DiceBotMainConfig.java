@@ -23,6 +23,8 @@ import javax.validation.constraints.NotNull;
 
 import io.dropwizard.Configuration;
 
+import com.derpgroup.derpwizard.configuration.AccountLinkingDAOConfig;
+import com.derpgroup.derpwizard.configuration.MainConfig;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
@@ -31,22 +33,15 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * @author Eric Olson
  * @since 0.0.1
  */
-public class MainConfig extends Configuration {
-  private boolean prettyPrint = true;
+public class DiceBotMainConfig extends MainConfig {
   
   @Valid
   @NotNull
   private DiceBotConfig diceBotConfig;
 
-  @JsonProperty
-  public boolean isPrettyPrint() {
-    return prettyPrint;
-  }
-
-  @JsonProperty
-  public void setPrettyPrint(boolean prettyPrint) {
-    this.prettyPrint = prettyPrint;
-  }
+  @Valid
+  @NotNull
+  private DiceBotDAOConfig daoConfig;
 
   @JsonProperty
   public DiceBotConfig getDiceBotConfig() {
@@ -57,5 +52,14 @@ public class MainConfig extends Configuration {
   public void setDiceBotConfig(DiceBotConfig diceBotConfig) {
     this.diceBotConfig = diceBotConfig;
   }
-  
+
+  @JsonProperty
+  public DiceBotDAOConfig getDaoConfig() {
+    return daoConfig;
+  }
+
+  @JsonProperty
+  public void setDaoConfig(DiceBotDAOConfig daoConfig) {
+    this.daoConfig = daoConfig;
+  }
 }

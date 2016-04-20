@@ -19,6 +19,7 @@
 package com.derpgroup.dicebot.resource;
 
 import java.util.Map;
+import java.util.UUID;
 
 import io.dropwizard.setup.Environment;
 
@@ -43,6 +44,9 @@ import com.amazon.speech.ui.OutputSpeech;
 import com.amazon.speech.ui.Reprompt;
 import com.amazon.speech.ui.SimpleCard;
 import com.amazon.speech.ui.SsmlOutputSpeech;
+import com.derpgroup.derpwizard.dao.AccountLinkingDAO;
+import com.derpgroup.derpwizard.model.accountlinking.ExternalAccountLink;
+import com.derpgroup.derpwizard.model.accountlinking.UserAccount;
 import com.derpgroup.derpwizard.voice.exception.DerpwizardException;
 import com.derpgroup.derpwizard.voice.exception.DerpwizardExceptionAlexaWrapper;
 import com.derpgroup.derpwizard.voice.exception.DerpwizardException.DerpwizardExceptionReasons;
@@ -53,7 +57,7 @@ import com.derpgroup.derpwizard.voice.model.ServiceInput;
 import com.derpgroup.derpwizard.voice.util.ConversationHistoryUtils;
 import com.derpgroup.dicebot.DiceBotMetadata;
 import com.derpgroup.dicebot.MixInModule;
-import com.derpgroup.dicebot.configuration.MainConfig;
+import com.derpgroup.dicebot.configuration.DiceBotMainConfig;
 import com.derpgroup.dicebot.manager.DiceBotManager;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -75,13 +79,13 @@ public class DiceBotAlexaResource {
   
   private ObjectMapper mapper;
   
-  String linkingFlowHostname;
-  String linkingFlowProtocol;
-  String landingPagePath;
+  private AccountLinkingDAO accountLinkingDAO;
   
-  public DiceBotAlexaResource(MainConfig config, Environment env) {
+  public DiceBotAlexaResource(DiceBotMainConfig config, Environment env, AccountLinkingDAO accountLinkingDAO) {
     manager = new DiceBotManager();
     mapper = new ObjectMapper().registerModule(new MixInModule());
+    
+    this.accountLinkingDAO = accountLinkingDAO;
   }
 
   /**
@@ -111,6 +115,27 @@ public class DiceBotAlexaResource {
         LOG.error(message);
         throw new DerpwizardException(message);
       }
+      
+      ExternalAccountLink alexaAccountLink = accountLinkingDAO.getAccountLinkByExternalUserIdAndExternalSystemName(alexaUserId, "ALEXA");
+      String userId = null;
+      
+      if(alexaAccountLink == null){     
+        LOG.info("No Alexa account link found for this user, creating a new user account and Alexa link.");
+        userId = UUID.randomUUID().toString();
+        UserAccount userAccount = new UserAccount();
+        userAccount.setUserId(userId);
+        accountLinkingDAO.updateUser(userAccount);
+        
+        ExternalAccountLink accountLink = new ExternalAccountLink();
+        accountLink.setUserId(userId);
+        accountLink.setExternalUserId(alexaUserId);
+        accountLink.setExternalSystemName("ALEXA");
+        accountLinkingDAO.createAccountLink(accountLink);
+      }else{
+        userId = alexaAccountLink.getUserId();
+      }      
+
+      sessionAttributes.put("userId", userId);
       
       CommonMetadata inputMetadata = mapper.convertValue(sessionAttributes, new TypeReference<DiceBotMetadata>(){});
       outputMetadata = mapper.convertValue(sessionAttributes, new TypeReference<DiceBotMetadata>(){});

@@ -24,7 +24,10 @@ import io.dropwizard.setup.Environment;
 
 import java.io.IOException;
 
-import com.derpgroup.dicebot.configuration.MainConfig;
+import com.derpgroup.derpwizard.configuration.AccountLinkingDAOConfig;
+import com.derpgroup.derpwizard.dao.AccountLinkingDAO;
+import com.derpgroup.derpwizard.dao.impl.AccountLinkingDAOFactory;
+import com.derpgroup.dicebot.configuration.DiceBotMainConfig;
 import com.derpgroup.dicebot.health.BasicHealthCheck;
 import com.derpgroup.dicebot.resource.DiceBotAlexaResource;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -36,18 +39,18 @@ import com.fasterxml.jackson.databind.SerializationFeature;
  * @author Eric Olson
  * @since 0.0.1
  */
-public class App extends Application<MainConfig> {
+public class App extends Application<DiceBotMainConfig> {
 
   public static void main(String[] args) throws Exception {
     new App().run(args);
   }
 
   @Override
-  public void initialize(Bootstrap<MainConfig> bootstrap) {
+  public void initialize(Bootstrap<DiceBotMainConfig> bootstrap) {
   }
 
   @Override
-  public void run(MainConfig config, Environment environment) throws IOException {
+  public void run(DiceBotMainConfig config, Environment environment) throws IOException {
     if (config.isPrettyPrint()) {
       ObjectMapper mapper = environment.getObjectMapper();
       mapper.enable(SerializationFeature.INDENT_OUTPUT);
@@ -55,8 +58,13 @@ public class App extends Application<MainConfig> {
 
     // Health checks
     environment.healthChecks().register("basics", new BasicHealthCheck(config, environment));
+
+    AccountLinkingDAOConfig accountLinkingDAOConfig = config.getDaoConfig().getAccountLinking();
+    
+    // DAO
+    AccountLinkingDAO accountLinkingDAO = AccountLinkingDAOFactory.getDAO(accountLinkingDAOConfig);
     
     // Resources
-    environment.jersey().register(new DiceBotAlexaResource(config, environment));
+    environment.jersey().register(new DiceBotAlexaResource(config, environment, accountLinkingDAO));
   }
 }
