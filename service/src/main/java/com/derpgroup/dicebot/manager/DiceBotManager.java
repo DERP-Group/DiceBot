@@ -4,6 +4,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Random;
+
+import javax.naming.ConfigurationException;
 
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -19,12 +22,17 @@ import com.derpgroup.dicebot.MixInModule;
 import com.derpgroup.dicebot.configuration.DiceBotConfig;
 import com.derpgroup.dicebot.skew.CoefficientDiceSkewStrategy;
 import com.derpgroup.dicebot.skew.DiceSkewStrategy;
+import com.derpgroup.dicebot.util.DiceSoundsUtil;
 import com.derpgroup.dicebot.util.DiceUtil;
 
 public class DiceBotManager{
   private final Logger LOG = LoggerFactory.getLogger(DiceBotManager.class);
   
   private final float defaultCoefficientModifierScalar = (float) .3;
+  private final boolean includeDiceSounds = true; //replace this with user specific config later
+  private static final String AUDIO_TAG_PATTERN = "<audio src=\"%s\" />";
+  
+  private DiceSoundsUtil diceSoundsUtil;
 
   static {
     ConversationHistoryUtils.getMapper().registerModule(new MixInModule());
@@ -32,7 +40,8 @@ public class DiceBotManager{
 
   public DiceBotManager(DiceBotConfig diceBotConfig) {
     super();
-    System.out.println(diceBotConfig.getDiceBotSoundsRootPath());
+    String diceBotSoundsRootPath = diceBotConfig.getDiceBotSoundsRootPath();
+    diceSoundsUtil = new DiceSoundsUtil(diceBotSoundsRootPath);
   }
 
   public void handleRequest(ServiceInput serviceInput,
@@ -199,9 +208,28 @@ public class DiceBotManager{
 
     StringBuilder textOutput = new StringBuilder();
     StringBuilder voiceOutput = new StringBuilder();
+    voiceOutput.append("Alright. "); //Randomize me
     for(Entry<Integer, List<Integer>> entry : rollsByNumSides.entrySet()){
       int numSides = entry.getKey();
       List<Integer> rolls = entry.getValue();
+      
+      String soundUrl = null;
+      try {
+        soundUrl = diceSoundsUtil.buildDiceSoundUrl(rolls.size(), numSides);
+      } catch (IllegalArgumentException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      } catch (ConfigurationException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }
+      
+      if(soundUrl != null){
+        String audioString = String.format(AUDIO_TAG_PATTERN, soundUrl);
+        System.out.println(audioString);
+        voiceOutput.append(audioString);
+      }
+      
       String diceWord;
       String valuesWord;
       if(rolls.size() == 1){
