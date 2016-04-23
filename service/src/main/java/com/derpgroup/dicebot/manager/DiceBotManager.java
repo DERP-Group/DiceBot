@@ -22,7 +22,7 @@ import com.derpgroup.dicebot.util.DiceUtil;
 
 public class DiceBotManager{
   private final Logger LOG = LoggerFactory.getLogger(DiceBotManager.class);
-  private final float defaultCoefficientModifierScalar = (float) .3;
+  private final float defaultCoefficientModifierScalar = (float) .1;
 
   static {
     ConversationHistoryUtils.getMapper().registerModule(new MixInModule());
@@ -203,13 +203,13 @@ public class DiceBotManager{
       String valuesWord;
       if(rolls.size() == 1){
         diceWord = "die";
-        valuesWord = "value";
+        valuesWord = "a";
       }else{
         diceWord = "dice";
-        valuesWord = "values";
+        valuesWord = "the following ";
       }
-      textOutput.append("I rolled " + rolls.size() + " " + numSides + " sided " + diceWord + ", with " + valuesWord + ": ");
-      voiceOutput.append("I rolled " + rolls.size() + " " + numSides + " sided  " + diceWord + "<break /> with " + valuesWord + "<break /> ");
+      textOutput.append("I rolled " + rolls.size() + " " + numSides + " sided " + diceWord + ", and got " + valuesWord + ": ");
+      voiceOutput.append("I rolled " + rolls.size() + " " + numSides + " sided  " + diceWord + "<break /> and got " + valuesWord + "<break /> ");
       for(Integer roll : rolls){
         textOutput.append(roll + ",");
         voiceOutput.append(roll + "<break />");

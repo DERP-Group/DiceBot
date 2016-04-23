@@ -21,9 +21,6 @@ package com.derpgroup.dicebot.configuration;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
-import io.dropwizard.Configuration;
-
-import com.derpgroup.derpwizard.configuration.AccountLinkingDAOConfig;
 import com.derpgroup.derpwizard.configuration.MainConfig;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
