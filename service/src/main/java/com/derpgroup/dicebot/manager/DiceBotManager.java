@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import javax.naming.ConfigurationException;
+
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,20 +18,28 @@ import com.derpgroup.derpwizard.voice.model.ServiceInput;
 import com.derpgroup.derpwizard.voice.util.ConversationHistoryUtils;
 import com.derpgroup.dicebot.DiceBotMetadata;
 import com.derpgroup.dicebot.MixInModule;
+import com.derpgroup.dicebot.configuration.DiceBotConfig;
 import com.derpgroup.dicebot.skew.CoefficientDiceSkewStrategy;
 import com.derpgroup.dicebot.skew.DiceSkewStrategy;
+import com.derpgroup.dicebot.util.DiceSoundsUtil;
 import com.derpgroup.dicebot.util.DiceUtil;
 
 public class DiceBotManager{
   private final Logger LOG = LoggerFactory.getLogger(DiceBotManager.class);
   private final float defaultCoefficientModifierScalar = (float) .1;
+  private final boolean includeDiceSounds = true; //replace this with user specific config later
+  private static final String AUDIO_TAG_PATTERN = "<audio src=\"%s\" />";
+  
+  private DiceSoundsUtil diceSoundsUtil;
 
   static {
     ConversationHistoryUtils.getMapper().registerModule(new MixInModule());
   }
 
-  public DiceBotManager() {
+  public DiceBotManager(DiceBotConfig diceBotConfig) {
     super();
+    String diceBotSoundsRootPath = diceBotConfig.getDiceBotSoundsRootPath();
+    diceSoundsUtil = new DiceSoundsUtil(diceBotSoundsRootPath);
   }
 
   public void handleRequest(ServiceInput serviceInput,
@@ -128,13 +138,30 @@ public class DiceBotManager{
 
   private void doRepeatRequest(ServiceInput serviceInput, ServiceOutput serviceOutput) {
     DiceBotMetadata inputMetadata = (DiceBotMetadata)serviceInput.getMetadata();
-    if(inputMetadata != null && inputMetadata.getPreviousRolls() != null){
-      Map<Integer, List<Integer>> previousRolls = inputMetadata.getPreviousRolls();
-
-      buildResponseFromRolls(previousRolls, serviceOutput);
-    }else{
-      LOG.error("User ended up on repeat intent with no conversation history. Redirecting to launch.");
+    if(inputMetadata == null || inputMetadata.getConversationHistory() == null || inputMetadata.getConversationHistory().size() < 1){
+      LOG.error("User ended up on repeat with no previous requests. Redirecting to launch.");
       doHelloRequest(serviceInput, serviceOutput);
+    }
+    
+    String previousSubject = "ROLL_DIE".toUpperCase();
+    
+    switch(previousSubject){
+      case "ROLL_DIE":
+      case "ROLL_ME_A_DIE":
+      case "ROLL_A_DIE_FOR_ME":
+        
+        Map<Integer, List<Integer>> previousRolls = inputMetadata.getPreviousRolls();
+        if(inputMetadata.getPreviousRolls() != null){
+          
+          buildResponseFromRolls(previousRolls, serviceOutput);
+        }else{
+          LOG.error("User asked to repeat dice with no previous rolls. Redirecting to launch.");
+          doHelloRequest(serviceInput, serviceOutput);
+        }
+        break;
+      default:
+        
+        break;
     }
   }
 
@@ -171,13 +198,23 @@ public class DiceBotManager{
       if(StringUtils.isEmpty(sides)){
         numSides = 6;
       }else{
-        numSides = Integer.parseInt(sides);
+        try{
+          numSides = Integer.parseInt(sides);
+        }catch(NumberFormatException e){
+          numSides = 6;
+          LOG.error(e.getMessage());
+        }
       }
       
       if(StringUtils.isEmpty(dice)){
         numDice = 1;
       }else{
-        numDice = Integer.parseInt(dice);
+        try{
+          numDice = Integer.parseInt(dice);
+        }catch(NumberFormatException e){
+          numDice = 1;
+          LOG.error(e.getMessage());
+        }
       }
     }
 
@@ -196,9 +233,25 @@ public class DiceBotManager{
 
     StringBuilder textOutput = new StringBuilder();
     StringBuilder voiceOutput = new StringBuilder();
+    voiceOutput.append("Alright. "); //Randomize me
     for(Entry<Integer, List<Integer>> entry : rollsByNumSides.entrySet()){
       int numSides = entry.getKey();
       List<Integer> rolls = entry.getValue();
+      
+      String soundUrl = null;
+      if(includeDiceSounds){
+        try {
+          soundUrl = diceSoundsUtil.buildDiceSoundUrl(rolls.size(), numSides);
+        } catch (IllegalArgumentException | ConfigurationException e) {
+          LOG.error(e.getMessage());
+        }
+      }
+      
+      if(soundUrl != null){
+        String audioString = String.format(AUDIO_TAG_PATTERN, soundUrl);
+        voiceOutput.append(audioString);
+      }
+      
       String diceWord;
       String valuesWord;
       if(rolls.size() == 1){

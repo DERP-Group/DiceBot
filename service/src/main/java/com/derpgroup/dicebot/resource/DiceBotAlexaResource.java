@@ -81,8 +81,8 @@ public class DiceBotAlexaResource {
   
   private AccountLinkingDAO accountLinkingDAO;
   
-  public DiceBotAlexaResource(DiceBotMainConfig config, Environment env, AccountLinkingDAO accountLinkingDAO) {
-    manager = new DiceBotManager();
+  public DiceBotAlexaResource(DiceBotMainConfig config, Environment env, DiceBotManager manager, AccountLinkingDAO accountLinkingDAO) {
+    this.manager = manager;
     mapper = new ObjectMapper().registerModule(new MixInModule());
     
     this.accountLinkingDAO = accountLinkingDAO;

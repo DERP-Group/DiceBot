@@ -27,8 +27,10 @@ import java.io.IOException;
 import com.derpgroup.derpwizard.configuration.AccountLinkingDAOConfig;
 import com.derpgroup.derpwizard.dao.AccountLinkingDAO;
 import com.derpgroup.derpwizard.dao.impl.AccountLinkingDAOFactory;
+import com.derpgroup.dicebot.configuration.DiceBotConfig;
 import com.derpgroup.dicebot.configuration.DiceBotMainConfig;
 import com.derpgroup.dicebot.health.BasicHealthCheck;
+import com.derpgroup.dicebot.manager.DiceBotManager;
 import com.derpgroup.dicebot.resource.DiceBotAlexaResource;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -58,13 +60,15 @@ public class App extends Application<DiceBotMainConfig> {
 
     // Health checks
     environment.healthChecks().register("basics", new BasicHealthCheck(config, environment));
-
+    
+    DiceBotConfig diceBotConfig = config.getDiceBotConfig();
+    DiceBotManager manager = new DiceBotManager(diceBotConfig);
+    
     AccountLinkingDAOConfig accountLinkingDAOConfig = config.getDaoConfig().getAccountLinking();
     
     // DAO
     AccountLinkingDAO accountLinkingDAO = AccountLinkingDAOFactory.getDAO(accountLinkingDAOConfig);
-    
     // Resources
-    environment.jersey().register(new DiceBotAlexaResource(config, environment, accountLinkingDAO));
+    environment.jersey().register(new DiceBotAlexaResource(config, environment, manager, accountLinkingDAO));
   }
 }

@@ -1,5 +1,7 @@
 {
-  "diceBotConfig":{},
+  "diceBotConfig":{
+    "diceBotSoundsRootPath":"https://s3.amazonaws.com/dicebot-sounds/prepared/"
+  },
   "daoConfig":{
     "accountLinking":{
       "type":"H2",
