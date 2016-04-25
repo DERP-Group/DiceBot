@@ -1,9 +1,12 @@
 package com.derpgroup.dicebot.manager;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import javax.naming.ConfigurationException;
 
@@ -12,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.derpgroup.derpwizard.voice.exception.DerpwizardException;
+import com.derpgroup.derpwizard.voice.model.ConversationHistoryEntry;
 import com.derpgroup.derpwizard.voice.model.ServiceOutput;
 import com.derpgroup.derpwizard.voice.model.SsmlDocumentBuilder;
 import com.derpgroup.derpwizard.voice.model.ServiceInput;
@@ -29,6 +33,9 @@ public class DiceBotManager{
   private final float defaultCoefficientModifierScalar = (float) .1;
   private final boolean includeDiceSounds = true; //replace this with user specific config later
   private static final String AUDIO_TAG_PATTERN = "<audio src=\"%s\" />";
+  
+  public static final String[] META_SUBJECT_VALUES = new String[] { "REPEAT" };
+  public static final Set<String> META_SUBJECTS = new HashSet<String>(Arrays.asList(META_SUBJECT_VALUES));
   
   private DiceSoundsUtil diceSoundsUtil;
 
@@ -136,31 +143,55 @@ public class DiceBotManager{
     serviceOutput.getVoiceOutput().setSsmltext(audioMessage);
   }
 
-  private void doRepeatRequest(ServiceInput serviceInput, ServiceOutput serviceOutput) {
+  private void doRepeatRequest(ServiceInput serviceInput, ServiceOutput serviceOutput) throws DerpwizardException {
     DiceBotMetadata inputMetadata = (DiceBotMetadata)serviceInput.getMetadata();
     if(inputMetadata == null || inputMetadata.getConversationHistory() == null || inputMetadata.getConversationHistory().size() < 1){
       LOG.error("User ended up on repeat with no previous requests. Redirecting to launch.");
       doHelloRequest(serviceInput, serviceOutput);
+      return;
     }
     
-    String previousSubject = "ROLL_DIE".toUpperCase();
+    ConversationHistoryEntry conversationHistoryEntry = ConversationHistoryUtils.getLastNonMetaRequestBySubject(inputMetadata.getConversationHistory(), META_SUBJECTS);
+    if(conversationHistoryEntry == null || StringUtils.isEmpty(conversationHistoryEntry.getMessageSubject())){
+      LOG.error("User ended up on repeat with invalid conversation history. Redirecting to launch.");
+      doHelloRequest(serviceInput, serviceOutput);
+      return;
+    }
     
-    switch(previousSubject){
+    String subject = conversationHistoryEntry.getMessageSubject().toUpperCase();
+    switch(subject){
       case "ROLL_DIE":
       case "ROLL_ME_A_DIE":
       case "ROLL_A_DIE_FOR_ME":
         
-        Map<Integer, List<Integer>> previousRolls = inputMetadata.getPreviousRolls();
-        if(inputMetadata.getPreviousRolls() != null){
-          
-          buildResponseFromRolls(previousRolls, serviceOutput);
-        }else{
+        if(inputMetadata.getPreviousRolls() == null){
           LOG.error("User asked to repeat dice with no previous rolls. Redirecting to launch.");
           doHelloRequest(serviceInput, serviceOutput);
+          
         }
+
+        Map<Integer, List<Integer>> previousRolls = inputMetadata.getPreviousRolls();
+
+        StringBuilder textOutput = new StringBuilder("Rolls were: ");
+        StringBuilder voiceOutput = new StringBuilder("Rolls were <break /> ");
+        for(Entry<Integer, List<Integer>> entry : previousRolls.entrySet()){
+          List<Integer> rolls = entry.getValue();
+          for(Integer roll : rolls){
+            textOutput.append(roll + ",");
+            voiceOutput.append(roll + "<break />");
+          }
+        }
+        
+        String textMessage = textOutput.substring(0, textOutput.length() - 1);
+        String voiceMessage = voiceOutput.toString();
+        serviceOutput.getVisualOutput().setTitle("Previous results: ");
+        serviceOutput.getVisualOutput().setText(textMessage);
+        serviceOutput.getVoiceOutput().setSsmltext(voiceMessage);
+        
         break;
       default:
-        
+        serviceInput.setSubject(subject);
+        handleRequest(serviceInput, serviceOutput);
         break;
     }
   }
@@ -269,10 +300,10 @@ public class DiceBotManager{
       }
     }
     
-    String visualMessage = textOutput.toString();
+    String textMessage = textOutput.substring(0, textOutput.length() - 1);
     String voiceMessage = voiceOutput.toString();
     serviceOutput.getVisualOutput().setTitle("Results: ");
-    serviceOutput.getVisualOutput().setText(visualMessage);
+    serviceOutput.getVisualOutput().setText(textMessage);
     serviceOutput.getVoiceOutput().setSsmltext(voiceMessage);
     
     DiceBotMetadata metadata = (DiceBotMetadata)serviceOutput.getMetadata();
