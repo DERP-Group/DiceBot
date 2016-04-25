@@ -34,8 +34,14 @@ public class DiceBotManager{
   private final boolean includeDiceSounds = true; //replace this with user specific config later
   private static final String AUDIO_TAG_PATTERN = "<audio src=\"%s\" />";
   
-  public static final String[] META_SUBJECT_VALUES = new String[] { "REPEAT" };
-  public static final Set<String> META_SUBJECTS = new HashSet<String>(Arrays.asList(META_SUBJECT_VALUES));
+  private static final String[] META_SUBJECT_VALUES = new String[] { "REPEAT" };
+  private static final Set<String> META_SUBJECTS = new HashSet<String>(Arrays.asList(META_SUBJECT_VALUES));
+  private static final String ROLL_FOLLOW_UP = "You can roll again, or say<break /> repeat<break /> to have me read back your numbers";
+  private static final String META_FOLLOW_UP = "Say <break />repeat<break /> if you want to hear that again, or feel free to roll.";
+  private static final String ROLL_FOLLOW_UP_INTERMEDIATE = "Roll again or say repeat";
+  private static final String META_FOLLOW_UP_INTERMEDIATE = "Shall I repeat that or roll some dice?";
+  
+  private boolean handholdMode = true;
   
   private DiceSoundsUtil diceSoundsUtil;
 
@@ -135,12 +141,16 @@ public class DiceBotManager{
     sb.append("\"Roll 4d20\"");
     sb.append("\n");
     sb.append("\"Repeat that\"");
+    sb.append("\n");
+    sb.append("A full list of commands, including some SUPER SECRET STUFF, can be found at www.derpgroup.com/bots.html#2");
     String cardMessage = sb.toString();
     serviceOutput.getVisualOutput().setTitle("How it works:");
     serviceOutput.getVisualOutput().setText(cardMessage);
 
-    String audioMessage = "You can use commands like <break />Roll me three dice<break />Roll a twelve sided die<break /> or <break />Roll four d twenty. You can also say repeat to hear your rolls again, or say stop to exit.";
+    String audioMessage = "You can use commands like <break />Roll me three dice<break />Roll a twelve sided die<break /> or <break />Roll four d twenty. You can also say repeat to hear your rolls again, or say stop to exit. Go ahead, try a command.";
+    String delayedMessage = "Try a command, or to hear the help dialogue again, say <break />repeat<break time=\"1250ms\"/> Or, for a full list of commands, visit the url shown in the card";
     serviceOutput.getVoiceOutput().setSsmltext(audioMessage);
+    serviceOutput.getDelayedVoiceOutput().setSsmltext(delayedMessage);
   }
 
   private void doRepeatRequest(ServiceInput serviceInput, ServiceOutput serviceOutput) throws DerpwizardException {
@@ -180,6 +190,12 @@ public class DiceBotManager{
             textOutput.append(roll + ",");
             voiceOutput.append(roll + "<break />");
           }
+        }
+
+
+        if(handholdMode){
+          int conversationLength = serviceOutput.getMetadata().getConversationHistory().size();
+          voiceOutput.append(getGradualBackoffSsmlSuffix(conversationLength, true));
         }
         
         String textMessage = textOutput.substring(0, textOutput.length() - 1);
@@ -299,6 +315,11 @@ public class DiceBotManager{
         voiceOutput.append(roll + "<break />");
       }
     }
+
+    if(handholdMode){
+      int conversationLength = serviceOutput.getMetadata().getConversationHistory().size();
+      voiceOutput.append(getGradualBackoffSsmlSuffix(conversationLength, true));
+    }
     
     String textMessage = textOutput.substring(0, textOutput.length() - 1);
     String voiceMessage = voiceOutput.toString();
@@ -308,5 +329,26 @@ public class DiceBotManager{
     
     DiceBotMetadata metadata = (DiceBotMetadata)serviceOutput.getMetadata();
     metadata.setPreviousRolls(rollsByNumSides);
+  }
+  
+  //For now, no reprompts on rolls, and only reprompts on others (HELP has its own text)
+  protected String getGradualBackoffSsmlSuffix(int conversationLength, boolean isRoll){
+    String ssmlSuffix = "";
+    if(conversationLength <= 2){
+        ssmlSuffix = "<break time=\"1000ms\" />" + (isRoll ? ROLL_FOLLOW_UP : "");
+    }else if(conversationLength <= 4){
+      ssmlSuffix = "<break time=\"1000ms\" />" + (isRoll ? ROLL_FOLLOW_UP_INTERMEDIATE : "");
+    }
+    return ssmlSuffix;
+  }
+  
+  protected String getGradualBackoffDelayedVoiceSsml(int conversationLength, boolean isRoll){
+    String delayedVoiceSsml = "";
+    if(conversationLength <= 2){
+        delayedVoiceSsml = isRoll ? "" : META_FOLLOW_UP;
+    }else if(conversationLength <= 4){
+      delayedVoiceSsml = isRoll ? "" : META_FOLLOW_UP_INTERMEDIATE;
+    }
+    return delayedVoiceSsml;
   }
 }
