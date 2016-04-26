@@ -36,10 +36,10 @@ public class DiceBotManager{
   
   private static final String[] META_SUBJECT_VALUES = new String[] { "REPEAT" };
   private static final Set<String> META_SUBJECTS = new HashSet<String>(Arrays.asList(META_SUBJECT_VALUES));
-  private static final String ROLL_FOLLOW_UP = "You can roll again, or say<break /> repeat<break /> to have me read back your numbers";
-  private static final String META_FOLLOW_UP = "Say <break />repeat<break /> if you want to hear that again, or feel free to roll.";
-  private static final String ROLL_FOLLOW_UP_INTERMEDIATE = "Roll again or say repeat";
-  private static final String META_FOLLOW_UP_INTERMEDIATE = "Shall I repeat that or roll some dice?";
+  private static final String ROLL_FOLLOW_UP = " You can roll again, or say<break /> repeat<break /> to have me read back your numbers";
+  private static final String META_FOLLOW_UP = " Say the word <break />repeat<break /> if you want to hear that again, or feel free to roll.";
+  private static final String ROLL_FOLLOW_UP_INTERMEDIATE = " Roll again or say repeat";
+  private static final String META_FOLLOW_UP_INTERMEDIATE = " Shall I repeat that or roll some dice?";
   
   private boolean handholdMode = true;
   
@@ -76,6 +76,15 @@ public class DiceBotManager{
       break;
     case "HELP":
       doHelpRequest(serviceInput, serviceOutput);
+      break;
+    case "WHO_BUILT_YOU":
+      doWhoBuiltYouRequest(serviceInput, serviceOutput);
+      break;
+    case "FRIENDS":
+      doFriendsRequest(serviceInput, serviceOutput);
+      break;
+    case "WHO_IS":
+      doWhoIsRequest(serviceInput, serviceOutput);
       break;
     case "REPEAT":
       doRepeatRequest(serviceInput, serviceOutput);
@@ -192,7 +201,6 @@ public class DiceBotManager{
           }
         }
 
-
         if(handholdMode){
           int conversationLength = serviceOutput.getMetadata().getConversationHistory().size();
           voiceOutput.append(getGradualBackoffSsmlSuffix(conversationLength, true));
@@ -229,6 +237,86 @@ public class DiceBotManager{
 
   protected void doStopRequest(ServiceInput serviceInput, ServiceOutput serviceOutput) throws DerpwizardException {
     serviceOutput.getVoiceOutput().setSsmltext("See ya!");
+  }
+
+  private void doWhoIsRequest(ServiceInput serviceInput, ServiceOutput serviceOutput) {
+    String botInQuestion = serviceInput.getMessageAsMap().get("botName");
+    if(StringUtils.isEmpty(botInQuestion)){
+      String response = "I don't have any info for this situation.";
+      serviceOutput.getVoiceOutput().setPlaintext(response);
+      serviceOutput.getVoiceOutput().setSsmltext(response);
+      serviceOutput.getVisualOutput().setTitle(response);
+      serviceOutput.getVisualOutput().setText(response);
+      return;
+    }
+
+
+    StringBuilder textOutput = new StringBuilder();
+    StringBuilder voiceOutput = new StringBuilder();
+    switch(botInQuestion.toLowerCase()){
+    case "complibot":
+      textOutput.append("That one's not the brightest. Despite my 44-game win streak, CompliBot keeps wanting to bet me on Yahtzee.");
+      voiceOutput.append("Ohh, that one's not the brightest. Despite my 44-game win streak, <phoneme alphabet=\"ipa\" ph=\"kɒmplIbɒt\"> CompliBot </phoneme> keeps wanting to bet me on Yahtzee.");
+      break;
+    case "insultibot":
+      textOutput.append("I once joined a tabletop RPG where InsultiBot was the dungeon master. I tell you what, that bot puts the 'die' back in 'dice'.");
+      voiceOutput.append("I once joined a tabletop <say-as interpret-as=\"spell-out\">RPG</say-as> where InsultaBot was the dungeon master. I tell you what, that bot puts the die<break /> back in dice.");
+      break;
+    case "dicebot":
+      textOutput.append("That's yours truly. You roll with me and you're guaranteed to win.");
+      voiceOutput.append("That's yours truly. You roll with me and you're guaranteed to win.");
+      break;
+      default:
+        textOutput.append("I must've rolled a 1 on my knowledge check, because I don't know who that is, but odds are they know who I am.");
+        voiceOutput.append("I must've rolled a 1 on my knowledge check, because I don't know who that is, but odds are they know who I am.");
+        break;   
+    }
+
+    if(handholdMode){
+      int conversationLength = serviceOutput.getMetadata().getConversationHistory().size();
+      voiceOutput.append(getGradualBackoffDelayedVoiceSsml(conversationLength, false));
+    }
+    
+    String textMessage = textOutput.substring(0, textOutput.length() - 1);
+    String voiceMessage = voiceOutput.toString();
+    serviceOutput.getVisualOutput().setTitle("Previous results: ");
+    serviceOutput.getVisualOutput().setText(textMessage);
+    serviceOutput.getVoiceOutput().setSsmltext(voiceMessage);
+  }
+
+  private void doFriendsRequest(ServiceInput serviceInput, ServiceOutput serviceOutput) {
+
+    StringBuilder textOutput = new StringBuilder("I usually roll solo, if you catch my drift, but CompliBot and InsultiBot are lucky enough to have me stop by now and then.");
+    StringBuilder voiceOutput = new StringBuilder("I usually roll solo if you catch my drift, but <phoneme alphabet=\"ipa\" ph=\"kɒmplIbɒt\"> CompliBot </phoneme> and InsultaBot are lucky enough to have me drop in every now and then.");
+    textOutput.append("\n\n");
+    textOutput.append("CompliBot: www.derpgroup.com/bots.html#0");
+    textOutput.append("\n\n");
+    textOutput.append("InsultiBot: www.derpgroup.com/bots.html#1");
+
+    if(handholdMode){
+      int conversationLength = serviceOutput.getMetadata().getConversationHistory().size();
+      voiceOutput.append(getGradualBackoffDelayedVoiceSsml(conversationLength, false));
+    }
+    
+    serviceOutput.getVisualOutput().setTitle("I was built by DERP Group! ");
+    serviceOutput.getVisualOutput().setText(textOutput.toString());
+    serviceOutput.getVoiceOutput().setSsmltext(voiceOutput.toString());
+  }
+
+  private void doWhoBuiltYouRequest(ServiceInput serviceInput, ServiceOutput serviceOutput) {
+
+    StringBuilder textOutput = new StringBuilder("David and Eric of DERPGroup rolled the dice on building me. They hit the jackpot, if I do say so myself!");
+    StringBuilder voiceOutput = new StringBuilder("David and Eric of DERPGroup rolled the dice on building me. They hit the jackpot, if I do say so myself!");
+    textOutput.append("\n\n www.derpgroup.com");
+
+    if(handholdMode){
+      int conversationLength = serviceOutput.getMetadata().getConversationHistory().size();
+      voiceOutput.append(getGradualBackoffDelayedVoiceSsml(conversationLength, false));
+    }
+    
+    serviceOutput.getVisualOutput().setTitle("I was built by DERP Group! ");
+    serviceOutput.getVisualOutput().setText(textOutput.toString());
+    serviceOutput.getVoiceOutput().setSsmltext(voiceOutput.toString());
   }
 
   private Map<Integer, Integer> getRollParameters(Map<String, String> messageMap) {
