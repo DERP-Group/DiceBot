@@ -106,6 +106,23 @@ public class DiceBotManager{
   private void doRollDieRequest(ServiceInput serviceInput, ServiceOutput serviceOutput) {
     Map<String, String> messageMap = serviceInput.getMessageAsMap();
     Map<Integer, Integer> rollParameters = getRollParameters(messageMap);
+    for(int sides : rollParameters.keySet()){
+      if(sides <2){
+        String text = "A " + sides + " sided die? I may be sleazy, but I can't cheat the rules of geometry!";
+        serviceOutput.getVisualOutput().setTitle("Invalid spatial geometry!");
+        serviceOutput.getVisualOutput().setText(text);
+        serviceOutput.getVoiceOutput().setSsmltext(text);
+        serviceOutput.setConversationEnded(true);
+        return;
+      }else if(sides == 2){
+        String text = "A 2 sided die is just called a coin. Do I look like I carry chump change on me?";
+        serviceOutput.getVisualOutput().setTitle("I'm here to roll dice, not flip coins.");
+        serviceOutput.getVisualOutput().setText(text);
+        serviceOutput.getVoiceOutput().setSsmltext(text);
+        serviceOutput.setConversationEnded(true);
+        return;
+      }
+    }
     
     DiceSkewStrategy strategy = new CoefficientDiceSkewStrategy(0 * defaultCoefficientModifierScalar);
     
