@@ -1,0 +1,26 @@
+ROLL_DIE roll a die
+ROLL_DIE roll a {sides} sided die
+ROLL_DIE roll a d. {sides}
+ROLL_DIE roll {dice} dice
+ROLL_DIE roll {dice} {sides} sided dice
+ROLL_DIE roll {dice} d. {sides}
+ROLL_ME_A_DIE roll me a die
+ROLL_ME_A_DIE roll me a {sides} sided die
+ROLL_ME_A_DIE roll me a d. {sides}
+ROLL_ME_A_DIE roll me {dice} dice
+ROLL_ME_A_DIE roll me {dice} {sides} sided dice
+ROLL_ME_A_DIE roll me {dice} d. {sides}
+ROLL_A_DIE_FOR_ME roll a die for me
+ROLL_A_DIE_FOR_ME roll a {sides} sided die for me
+ROLL_A_DIE_FOR_ME roll a d. {sides} for me
+ROLL_A_DIE_FOR_ME roll {dice} dice for me
+ROLL_A_DIE_FOR_ME roll {dice} {sides} sided dice for me
+ROLL_A_DIE_FOR_ME roll {dice} d. {sides} for me
+WHO_BUILT_YOU who built you
+WHO_BUILT_YOU who wrote you
+WHO_BUILT_YOU who created you
+WHO_BUILT_YOU who are your parents
+FRIENDS who are your friends
+FRIENDS who is your friend
+WHO_IS who is {botName}
+WHO_IS who {botName} is

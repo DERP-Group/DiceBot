@@ -1,0 +1,72 @@
+{
+  "intents": [
+    {
+      "intent": "ROLL_DIE",
+      "slots":[
+        {
+        	"name":"sides",
+        	"type":"AMAZON.NUMBER"
+        },
+        {
+        	"name":"dice",
+        	"type":"AMAZON.NUMBER"
+        }
+      ]
+    },
+    {
+      "intent": "ROLL_ME_A_DIE",
+      "slots":[
+        {
+        	"name":"sides",
+        	"type":"AMAZON.NUMBER"
+        },
+        {
+        	"name":"dice",
+        	"type":"AMAZON.NUMBER"
+        }
+      ]
+    },
+    {
+      "intent": "ROLL_A_DIE_FOR_ME",
+      "slots":[
+        {
+        	"name":"sides",
+        	"type":"AMAZON.NUMBER"
+        },
+        {
+        	"name":"dice",
+        	"type":"AMAZON.NUMBER"
+        }
+      ]
+    },
+    {
+      "intent": "WHO_BUILT_YOU",
+      "slots": []
+    },
+    {
+      "intent": "FRIENDS",
+      "slots": []
+    },
+    {
+      "intent": "WHO_IS",
+      "slots": [
+        {
+          "name":"botName",
+          "type":"BOTS"
+        }
+      ]
+    },
+    {
+      "intent": "AMAZON.HelpIntent"
+    },
+    {
+      "intent": "AMAZON.RepeatIntent"
+    },
+    {
+      "intent": "AMAZON.CancelIntent"
+    },
+    {
+      "intent": "AMAZON.StopIntent"
+    }
+  ]
+}
