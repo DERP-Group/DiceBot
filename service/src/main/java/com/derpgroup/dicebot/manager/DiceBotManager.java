@@ -394,10 +394,10 @@ public class DiceBotManager{
         valuesWord = "a";
       }else{
         diceWord = "dice";
-        valuesWord = "the following ";
+        valuesWord = "the following <break /> ";
       }
       textOutput.append("I rolled " + rolls.size() + " " + numSides + " sided " + diceWord + ", and got " + valuesWord + ": ");
-      voiceOutput.append("I rolled " + rolls.size() + " " + numSides + " sided  " + diceWord + "<break /> and got " + valuesWord + "<break /> ");
+      voiceOutput.append("I rolled " + rolls.size() + " " + numSides + " sided  " + diceWord + "<break /> and got " + valuesWord);
       for(Integer roll : rolls){
         textOutput.append(roll + ",");
         voiceOutput.append(roll + "<break />");
